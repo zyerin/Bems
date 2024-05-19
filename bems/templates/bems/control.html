@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Device Control</title>
+</head>
+<body>
+    <h1>Control Device</h1>
+    <button onclick="sendCommand('on')">Turn On</button>
+    <button onclick="sendCommand('off')">Turn Off</button>
+
+    <script>
+        function sendCommand(command) {
+            fetch('/bems/control/control/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({command: command})
+            });
+        }
+
+    </script>
+</body>
+</html>

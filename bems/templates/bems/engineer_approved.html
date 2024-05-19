@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>요청 승인</title>
+    <style>
+        #statusContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .deviceStatus {
+            display: flex;
+            justify-content: space-between;
+            width: 700px;
+            margin-bottom: 25px;
+        }
+        .deviceStatus p {
+            margin-bottom: 0;
+            font-size: 50px;
+        }
+        button {
+            width: 200px;
+            height: 70px;
+            font-size: 45px;
+            position: absolute;
+            left: 700px;
+        }
+        .status {
+            border: 1px solid black;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        .normal {
+            color: black;
+        }
+        .abnormal {
+            color: red;
+        }
+        .titleTag div {
+            background-color: yellow;
+            font-size: 80px;
+            text-align: center;
+            line-height: 120px;
+            margin-top: 100px;
+            height: 120px;
+            border-radius: 10px;
+        }
+        .engineerTag div {
+            font-size: 50px;
+            text-align: center;
+            margin-top: 50px;
+            line-height: 100px;
+        }
+        .center {
+            display: flex;
+            font-size: 50px;
+            justify-content: center;
+            align-items: center;
+            height: 10vh;
+        }
+        form {
+            text-align: center;
+        }
+        .absolute-button {
+            position: absolute;
+            left: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="titleTag">
+        <div>우리텍고등학교 원격지원</div>
+    </div>
+    <div id="statusContainer">
+        <div class="deviceStatus">
+            <p>그룹셀렉터
+                <span id="groupSelectorStatus" class="status">정상</span>
+                <button onclick="sendCommand('{1:reset:groupselector}')">재부팅</button>
+            </p>
+        </div>
+        <div class="deviceStatus">
+            <p>익스체인저
+                <span id="exchangerStatus" class="status">정상</span>
+                <button onclick="sendCommand('{2:reset:exchanger}')">재부팅</button>
+            </p>
+        </div>
+        <div class="deviceStatus">
+            <p>스피커셀렉터
+                <span id="speakerSelectorStatus" class="status">정상</span>
+                <button onclick="sendCommand('{3:reset:speakerselector}')">RESET</button>
+            </p>
+        </div>
+        <div class="deviceStatus">
+            <p>리모트엠프
+                <span id="remoteAmpStatus" class="status">정상</span>
+                <button onclick="sendCommand('{4:reset:remoteamp}')">RESET</button>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function sendCommand(command) {
+            fetch('/bems/control/control/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({command: command})
+            });
+        }
+
+        // 서버에서 전달된 장치 상태 데이터를 자바스크립트로 전달
+        const deviceStatus = JSON.parse('{{ device_status|escapejs }}');
+        console.log(deviceStatus);
+
+        // 장치 상태에 따라 업데이트
+        function updateDeviceStatus() {
+            const statusElements = {
+                groupselector: document.getElementById('groupSelectorStatus'),
+                speakerselector: document.getElementById('speakerSelectorStatus'),
+                exchanger: document.getElementById('exchangerStatus'),
+                remoteamp: document.getElementById('remoteAmpStatus')
+            };
+
+            for (const [device, status] of Object.entries(deviceStatus)) {
+                if (status === 'o') {
+                    statusElements[device].textContent = '정상';
+                    statusElements[device].classList.add('normal');
+                    statusElements[device].classList.remove('abnormal');
+                } else if (status === 'x') {
+                    statusElements[device].textContent = '비정상';
+                    statusElements[device].classList.add('abnormal');
+                    statusElements[device].classList.remove('normal');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', updateDeviceStatus);
+    </script>
+</body>
+</html>

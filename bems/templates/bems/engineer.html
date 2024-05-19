@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>BEMS 엔지니어</title>
+</head>
+<body>
+    <style>
+        .titleTag div{
+            background-color: green;
+            font-size: 80px;
+            text-align: center;
+            line-height: 120px;
+            margin-top: 100px;
+            height: 120px;
+            border-radius: 10px;
+        }
+        .engineerTag div{
+            font-size: 50px;
+            text-align: center;
+            margin-top: 50px;
+            line-height: 100px;
+        }
+        .center {
+            display: flex;
+            font-size: 50px;
+            justify-content: center;
+            align-items: center;
+            height: 10vh; /* 화면 전체 높이를 기준으로 정렬 */
+        }
+        form {
+            text-align: center; /* 내부 요소들 가운데 정렬 */
+        }
+        input[type=number] {
+            width: 100px; /* 너비 변경 */
+            height: 50px; /* 높이 변경 */
+            /* 다른 스타일 속성 추가 가능 */
+        }
+    </style>
+
+    <div class="titleTag">
+        <div>우리텍고등학교 원격지원</div>
+    </div>
+    <div class="engineerTag">
+        <div>원격단말(엔지니어) 페이지</div>
+    </div>
+
+    <div class="center">
+        <form action="{% url 'request_approval' %}" method="post">
+            {% csrf_token %}  <!-- CSRF 보안 토큰 -->
+            <input type="hidden" name="entry_id" value="{{ entry_id }}">  <!-- 엔지니어의 엔트리 ID -->
+            <label for="requested_time">요청시간(분):</label>
+            <input type="number" id="requested_time" name="requested_time"  style="font-size:50px" max="100" required>
+            <button type="submit" style="font-size:38px">승인요청</button>  <!-- 승인요청 버튼 -->
+        </form>        
+    </div>
+
+</body>
+</html>

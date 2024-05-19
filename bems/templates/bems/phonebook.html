@@ -1,0 +1,36 @@
+<!-- templates/phonebook.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>전화번호부</title>
+</head>
+<body>
+    <h1>전화번호부</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>이름</th>
+                <th>전화번호</th>
+                <th>문자 보내기</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in phonebook_entries %}
+                <tr>
+                    <td>{{ entry.name }}:</td>  <!-- 이름 표시 -->
+                    <td>{{ entry.phone_number }}:</td>  <!-- 전화번호 표시 -->
+                    <td>
+                        <!-- 문자 보내기 버튼, /send_sms/ 경로로 POST 요청 -->
+                        <form action="{% url 'sms' %}" method="post">
+                            {% csrf_token %}  <!-- CSRF 토큰 포함 -->
+                            <input type="hidden" name="entry_id" value="{{ entry.id }}">  <!-- 엔트리 ID 전달 -->
+                            <button type="submit">문자 보내기</button>  <!-- 문자 보내기 버튼 -->
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
