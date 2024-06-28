@@ -347,7 +347,6 @@ def process_data(data):
                 # 엔지니어에게 보낼 메시지
                 # 절대 URL 생성: ID가 포함된 URL을 생성
                 relative_url = reverse('engineer', args=[controller_id])  # 상대 URL 생성
-                ngrok_base_url = "http://1865-125-132-94-9.ngrok-free.app"
                 nptechon_url = "http://www.nptechon.com"
                 yerin_url = "http://www.shimyerin.site"
                 engineer_url = f"{yerin_url}{relative_url}"  # 절대 URL 생성
