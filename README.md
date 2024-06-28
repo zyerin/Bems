@@ -6,7 +6,7 @@
 양측의 응답을 통해 접속 권한을 설정하며, 외부 원격 단말에서 인증서버에 의해 구내 방송망을 제어한다.
 
 ## 💻 개발환경
-<img src="https://img.shields.io/badge/Python-3DDC84?style=flat&logo=JAVA&logoColor=white"/> 
+<img src="https://img.shields.io/badge/Python-3DDD84?style=flat&logo=JAVA&logoColor=white"/> 
 
 ## 📑 Network Flow
 ![네트워크플로우](https://github.com/zyerin/Bems/assets/131842185/b077e866-b87f-45ba-a682-689e5ba975ae)
