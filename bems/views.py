@@ -35,7 +35,6 @@ def send_sms_view(request):
         # 엔지니어에게 보낼 메시지
         # 절대 URL 생성: ID가 포함된 URL을 생성
         relative_url = reverse('engineer', args=[entry_id])  # 상대 URL 생성
-        ngrok_base_url = "http://1865-125-132-94-9.ngrok-free.app"
         nptechon_url = "http://www.nptechon.com"
         yerin_url = "http://www.shimyerin.site"
         engineer_url = f"{yerin_url}{relative_url}"  # 절대 URL 생성
@@ -106,7 +105,6 @@ def request_approval(request):
 
         # 관리자에게 전송할 URL 생성
         relative_url = reverse('manager', args=[entry_id, requested_time])
-        ngrok_base_url = "http://1865-125-132-94-9.ngrok-free.app"
         nptechon_url = "http://www.nptechon.com"
         yerin_url = "http://www.shimyerin.site"
         approval_url = f"{yerin_url}{relative_url}"
@@ -156,7 +154,6 @@ def approve_request(request):
         # 승인 처리 로직
         # 승인이 되었다는 메시지와 함께 엔지니어 페이지 URL을 생성하여 전송
         relative_url = reverse('engineer_approved', args=[entry_id])
-        ngrok_base_url = "http://1865-125-132-94-9.ngrok-free.app"
         nptechon_url = "http://www.nptechon.com"
         yerin_url = "http://www.shimyerin.site"
         engineer_url = f"{yerin_url}{relative_url}"
