@@ -40,13 +40,16 @@ def send_sms_view(request):
         engineer_url = f"{yerin_url}{relative_url}"  # 절대 URL 생성
 
         # 관리자 전화번호 지정
-        engineer_phone_number = '01066955974' # 고정
+        engineer_phone_number = os.getenv('ENGINEER_PHONE_NUMBER') # 고정
+
+        # 문자발송 전화번호 지정
+        sender_phone_number = os.getenv('SENDER_PHONE_NUMBER')
 
         # 문자 메시지 생성
         engineer_sms_text = f"이 경로로 접속해주세요: {engineer_url}"
         manager_sms_text = "학교에 문제가 발생했습니다."
 
-        api_key = "NCSWORACJNINXWSO"
+        api_key = os.getenv('COOL_SMS_API_KEY')
         api_secret = os.getenv('COOL_SMS_API_SECRET')
 
         cool = Message(api_key, api_secret)
@@ -55,7 +58,7 @@ def send_sms_view(request):
         engineer_params = {
             'type': 'sms',
             'to': engineer_phone_number,  # 엔지니어에게 보내는 전화번호
-            'from': '01066955974',  # 발신자 번호
+            'from': sender_phone_number,  # 발신자 번호
             'text': engineer_sms_text,  # 엔지니어에게 보내는 메시지
         }
 
@@ -63,7 +66,7 @@ def send_sms_view(request):
         manager_params = {
             'type': 'sms',
             'to': manager_phone_number,  # 관리자에게 보내는 전화번호
-            'from': '01066955974',  # 발신자 번호
+            'from': sender_phone_number,  # 발신자 번호
             'text': manager_sms_text,  # 관리자에게 보내는 메시지
         }
 
@@ -103,6 +106,9 @@ def request_approval(request):
         phonebook_entry = Phonebook.objects.get(id=entry_id)
         manager_phone_number = phonebook_entry.phone_number
 
+        # 문자발송 전화번호 지정
+        sender_phone_number = os.getenv('SENDER_PHONE_NUMBER')
+
         # 관리자에게 전송할 URL 생성
         relative_url = reverse('manager', args=[entry_id, requested_time])
         nptechon_url = "http://www.nptechon.com"
@@ -113,7 +119,7 @@ def request_approval(request):
         # 관리자에게 보낼 메시지
         manager_sms_text = f"엔지니어 요청 승인: {approval_url}"
 
-        api_key = "NCSWORACJNINXWSO"
+        api_key = os.getenv('COOL_SMS_API_KEY')
         api_secret = os.getenv('COOL_SMS_API_SECRET')
 
         cool = Message(api_key, api_secret)
@@ -122,7 +128,7 @@ def request_approval(request):
         params = {
             'type': 'sms',
             'to': manager_phone_number,
-            'from': '01066955974',
+            'from': sender_phone_number,
             'text': manager_sms_text,
         }
 
@@ -159,16 +165,19 @@ def approve_request(request):
         engineer_url = f"{yerin_url}{relative_url}"
         engineer_message = f"요청이 승인되었습니다: {engineer_url}"
 
-        api_key = "NCSWORACJNINXWSO"
+        api_key = os.getenv('COOL_SMS_API_KEY')
         api_secret = os.getenv('COOL_SMS_API_SECRET')
 
         cool = Message(api_key, api_secret)
 
-        engineer_phone_number = '01066955974'  # 엔지니어 번호
+        # 관리자 전화번호 지정
+        engineer_phone_number = os.getenv('ENGINEER_PHONE_NUMBER')  # 고정
+        # 문자발송 전화번호 지정
+        sender_phone_number = os.getenv('SENDER_PHONE_NUMBER')
         params = {
             'type': 'sms',
             'to': engineer_phone_number,
-            'from': '01066955974',
+            'from': sender_phone_number,
             'text': engineer_message,
         }
 
@@ -291,15 +300,16 @@ def handle_client(conn):
 
 # 문자 메시지를 보내는 함수
 def send_sms(phone_number, message_text):
-    api_key = "NCSWORACJNINXWSO"
+    api_key = os.getenv('COOL_SMS_API_KEY')
     api_secret = os.getenv('COOL_SMS_API_SECRET')  # 환경 변수로 API Secret 설정 필요
 
     cool = Message(api_key, api_secret)
-
+    # 문자발송 전화번호 지정
+    sender_phone_number = os.getenv('SENDER_PHONE_NUMBER')
     params = {
         'type': 'sms',
         'to': phone_number,
-        'from': '01066955974',  # 발신자 번호
+        'from': sender_phone_number,  # 발신자 번호
         'text': message_text,
     }
 
@@ -352,7 +362,7 @@ def process_data(data):
                 engineer_url = f"{yerin_url}{relative_url}"  # 절대 URL 생성
 
                 # 관리자 전화번호 지정
-                engineer_phone_number = '01066955974'  # 고정
+                engineer_phone_number = os.getenv('ENGINEER_PHONE_NUMBER')  # 고정
 
                 # 엔지니어에게 보낼 메시지
                 engineer_text = f"이 경로로 접속해주세요: {engineer_url}"
