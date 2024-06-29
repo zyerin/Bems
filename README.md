@@ -1,5 +1,5 @@
 # <p align = "center">BEMS 혁신제품 Web server 개발 
-<p align = "center">산학 협업 프로젝트를 통해 특허를 기반으로 구현한 제품 'BEMS'의 인증서버 구현
+<p align = "center">산학 협업 프로젝트를 통해 특허를 기반으로 구현한 제품인 'BEMS'의 인증서버(Web Server) 구현
 
 ## 🔦 Introduction
 본 프로젝트의 시스템은 외부 원격 단말의 구내 방송망의 접속 요청을 받으면 관리자 단말과 외부 원격 단말에 동시에 인증 메세지를 송신하고, 
