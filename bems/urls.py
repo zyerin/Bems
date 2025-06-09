@@ -13,13 +13,11 @@ urlpatterns = [
     path('phonebook/', phonebook_view, name='phonebook'),  # /phonebook 경로 추가
     path('engineer/<int:entry_id>/', engineer_view, name='engineer'),
     path('engineer_request_approval/', engineer_request_approval, name='engineer_request_approval'),
-    path('manager/<int:entry_id>/<int:requested_time>/', manager_view, name='manager'),
+    path('manager/<int:entry_id>/', manager_view, name='manager'),
     path('manager_response_handler/', manager_response, name='manager_response'),
     path('engineer/approved/<int:entry_id>/', engineer_approved_view, name='engineer_approved'),
     path('control/', control, name='control'),
     path('control/control/', control_device, name='control_device'),
     path('login/engineer/', engineer_login, name='engineer_login'),
     path('login/manager/', manager_login, name='manager_login'),
-
-
 ]
