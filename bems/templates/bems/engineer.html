@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>BEMS 엔지니어</title>
-</head>
-<body>
     <style>
-        .titleTag div{
+        .titleTag div {
             background-color: green;
             font-size: 80px;
             text-align: center;
@@ -15,7 +13,7 @@
             height: 120px;
             border-radius: 10px;
         }
-        .engineerTag div{
+        .engineerTag div {
             font-size: 50px;
             text-align: center;
             margin-top: 50px;
@@ -26,34 +24,72 @@
             font-size: 50px;
             justify-content: center;
             align-items: center;
-            height: 10vh; /* 화면 전체 높이를 기준으로 정렬 */
+            flex-direction: column;
+            height: 100vh;
         }
         form {
-            text-align: center; /* 내부 요소들 가운데 정렬 */
+            text-align: center;
+            margin-bottom: 50px;
         }
-        input[type=number] {
-            width: 100px; /* 너비 변경 */
-            height: 50px; /* 높이 변경 */
-            /* 다른 스타일 속성 추가 가능 */
+        input {
+            font-size: 40px;
+            margin: 10px;
+        }
+        button {
+            font-size: 38px;
         }
     </style>
-
+</head>
+<body>
     <div class="titleTag">
         <div>우리텍고등학교 원격지원</div>
     </div>
     <div class="engineerTag">
-        <div>원격단말(엔지니어) 페이지</div>
+        <div>원격 단말(엔지니어) 페이지</div>
     </div>
 
     <div class="center">
-        <form action="{% url 'request_approval' %}" method="post">
-            {% csrf_token %}  <!-- CSRF 보안 토큰 -->
-            <input type="hidden" name="entry_id" value="{{ entry_id }}">  <!-- 엔지니어의 엔트리 ID -->
-            <label for="requested_time">요청시간(분):</label>
-            <input type="number" id="requested_time" name="requested_time"  style="font-size:50px" max="100" required>
-            <button type="submit" style="font-size:38px">승인요청</button>  <!-- 승인요청 버튼 -->
-        </form>        
+        <!-- 1단계: 로그인 -->
+        <form id="loginForm" method="post" action="{% url 'engineer_login' %}">
+            {% csrf_token %}
+            <input type="hidden" name="entry_id" value="{{ entry_id }}">
+            <label for="password">비밀번호:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">로그인</button>
+        </form>
+
+        <!-- 2단계: 승인 요청 (초기엔 숨김) -->
+        <form id="approvalForm" method="post" action="{% url 'engineer_request_approval' %}" style="display:none;">
+            {% csrf_token %}
+            <input type="hidden" name="entry_id" value="{{ entry_id }}">
+            <button type="submit">승인요청</button>
+        </form>
     </div>
 
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const approvalForm = document.getElementById('approvalForm');
+
+        loginForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(loginForm);
+            const response = await fetch('/bems/login/engineer/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("인증 성공! 관리자에게 승인 요청을 진행해주세요.");
+                loginForm.style.display = 'none';
+                approvalForm.style.display = 'block';
+            } else {
+                alert("비밀번호가 올바르지 않습니다.");
+            }
+        });
+    </script>
 </body>
 </html>

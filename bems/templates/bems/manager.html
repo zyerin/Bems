@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>BEMS 관리자</title>
-</head>
-<body>
     <style>
-        .titleTag div{
+        .titleTag div {
             background-color: cyan;
             font-size: 80px;
             text-align: center;
@@ -15,7 +13,7 @@
             height: 120px;
             border-radius: 10px;
         }
-        .managerTag div{
+        .managerTag div {
             font-size: 50px;
             text-align: center;
             margin-top: 50px;
@@ -26,35 +24,76 @@
             font-size: 50px;
             justify-content: center;
             align-items: center;
-            height: 10vh; /* 화면 전체 높이를 기준으로 정렬 */
+            flex-direction: column;
+            height: 100vh;
         }
         form {
-            text-align: center; /* 내부 요소들 가운데 정렬 */
+            text-align: center;
+            margin-bottom: 50px;
         }
-        button[type=submit] {
-            width: 150px; /* 너비 변경 */
-            /* height: 50px; 높이 변경 */
-            /* 다른 스타일 속성 추가 가능 */
+        input, button {
+            font-size: 40px;
+            margin: 10px;
         }
         button {
-            margin-right: 50px; /* 오른쪽 마진 설정 */
+            margin-right: 30px;
         }
     </style>
-
+</head>
+<body>
     <div class="titleTag">
         <div>우리텍고등학교 원격지원</div>
     </div>
+
     <div class="managerTag">
         <div>관리자 페이지</div>
-        <div>엔지니어가 {{ requested_time }}분 동안 작업을 요청했습니다.</div>
+        <div>엔지니어가 작업을 요청했습니다.</div>
     </div>
 
-    <form action="{% url 'approve_request' %}" method="post">
-        {% csrf_token %}
-        <input type="hidden" name="entry_id" value="{{ entry_id }}">
-        <input type="hidden" name="requested_time" value="{{ requested_time }}">
-        <button type="submit" name="action" value="approve" style="font-size:38px">승인</button>  <!-- 승인 버튼 -->
-        <button type="submit" name="action" value="deny" style="font-size:38px">거부</button>  <!-- 거부 버튼 -->
-    </form>
+    <div class="center">
+        <!-- 1단계: 로그인 폼 -->
+        <form id="loginForm" method="post" action="{% url 'manager_login' %}">
+            {% csrf_token %}
+            <input type="hidden" name="entry_id" value="{{ entry_id }}">
+            <label for="password">비밀번호:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">로그인</button>
+        </form>
+
+        <!-- 2단계: 승인/거부 폼 (초기에는 숨김 처리) -->
+        <form id="approvalForm" method="post" action="{% url 'manager_response' %}" style="display:none;">
+            {% csrf_token %}
+            <input type="hidden" name="entry_id" value="{{ entry_id }}">
+            <button type="submit" name="action" value="approve">승인</button>
+            <button type="submit" name="action" value="deny">거부</button>
+        </form>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const approvalForm = document.getElementById('approvalForm');
+
+        loginForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(loginForm);
+
+            const response = await fetch('/bems/login/manager/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("인증 성공! 승인/거부를 선택하세요.");
+                loginForm.style.display = 'none';
+                approvalForm.style.display = 'block';
+            } else {
+                alert("비밀번호가 올바르지 않습니다.");
+            }
+        });
+    </script>
 </body>
 </html>

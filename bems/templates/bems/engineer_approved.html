@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>요청 승인</title>
+    <title>엔지니어 단말</title>
     <style>
         #statusContainer {
             display: flex;
@@ -13,8 +13,9 @@
         .deviceStatus {
             display: flex;
             justify-content: space-between;
-            width: 700px;
+            width: 1000px;
             margin-bottom: 25px;
+            align-items: center;
         }
         .deviceStatus p {
             margin-bottom: 0;
@@ -24,8 +25,7 @@
             width: 200px;
             height: 70px;
             font-size: 45px;
-            position: absolute;
-            left: 700px;
+            margin-left: 20px;
         }
         .status {
             border: 1px solid black;
@@ -47,25 +47,10 @@
             height: 120px;
             border-radius: 10px;
         }
-        .engineerTag div {
-            font-size: 50px;
-            text-align: center;
-            margin-top: 50px;
-            line-height: 100px;
-        }
-        .center {
-            display: flex;
-            font-size: 50px;
-            justify-content: center;
-            align-items: center;
-            height: 10vh;
-        }
-        form {
-            text-align: center;
-        }
-        .absolute-button {
-            position: absolute;
-            left: 500px;
+        .statusMessage {
+            font-size: 30px;
+            margin-left: 20px;
+            color: green;
         }
     </style>
 </head>
@@ -77,38 +62,60 @@
         <div class="deviceStatus">
             <p>그룹셀렉터
                 <span id="groupSelectorStatus" class="status">정상</span>
-                <button onclick="sendCommand('{1:reset:groupselector}')">재부팅</button>
+                <button onclick="sendCommand('{1:reset:groupselector}', 'groupselector')">재부팅</button>
+                <span id="groupselectorMessage" class="statusMessage"></span>
             </p>
         </div>
         <div class="deviceStatus">
             <p>익스체인저
                 <span id="exchangerStatus" class="status">정상</span>
-                <button onclick="sendCommand('{2:reset:exchanger}')">재부팅</button>
+                <button onclick="sendCommand('{2:reset:exchanger}', 'exchanger')">재부팅</button>
+                <span id="exchangerMessage" class="statusMessage"></span>
             </p>
         </div>
         <div class="deviceStatus">
             <p>스피커셀렉터
                 <span id="speakerSelectorStatus" class="status">정상</span>
-                <button onclick="sendCommand('{3:reset:speakerselector}')">RESET</button>
+                <button onclick="sendCommand('{3:reset:speakerselector}', 'speakerselector')">재부팅</button>
+                <span id="speakerselectorMessage" class="statusMessage"></span>
             </p>
         </div>
         <div class="deviceStatus">
             <p>리모트엠프
                 <span id="remoteAmpStatus" class="status">정상</span>
-                <button onclick="sendCommand('{4:reset:remoteamp}')">RESET</button>
+                <button onclick="sendCommand('{4:reset:remoteamp}', 'remoteamp')">재부팅</button>
+                <span id="remoteampMessage" class="statusMessage"></span>
             </p>
         </div>
     </div>
 
     <script>
-        function sendCommand(command) {
+        function sendCommand(command, deviceKey) {
+            console.log("보낸 명령:", command);
+
             fetch('/bems/control/control/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
-                body: JSON.stringify({command: command})
+                body: JSON.stringify({ command: command })
+            })
+            .then(response => {
+                if (response.ok) {
+                    const messageElement = document.getElementById(deviceKey + "Message");
+                    if (messageElement) {
+                        messageElement.textContent = "요청 전송됨";
+                        setTimeout(() => {
+                            messageElement.textContent = "";
+                        }, 3000);
+                    }
+                } else {
+                    alert("요청 실패");
+                }
+            })
+            .catch(error => {
+                console.error("요청 중 오류 발생:", error);
             });
         }
 
@@ -116,7 +123,6 @@
         const deviceStatus = JSON.parse('{{ device_status|escapejs }}');
         console.log(deviceStatus);
 
-        // 장치 상태에 따라 업데이트
         function updateDeviceStatus() {
             const statusElements = {
                 groupselector: document.getElementById('groupSelectorStatus'),
