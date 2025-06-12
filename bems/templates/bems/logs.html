@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>로그</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .log-container {
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 15px;
+            height: 600px;
+            overflow-y: scroll;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>로그 내용</h1>
+    <div class="log-container">
+        {% for line in log_lines %}
+            {{ line }}
+        {% endfor %}
+    </div>
+</body>
+</html>
