@@ -90,10 +90,13 @@
     </div>
 
     <script>
+        const entryId = {{ entry_id }};
+        console.log("컨트롤러(학교): ", entryId);
+
         function sendCommand(command, deviceKey) {
             console.log("보낸 명령:", command);
 
-            fetch('/bems/control/control/', {
+            fetch(`/bems/control/${entryId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
