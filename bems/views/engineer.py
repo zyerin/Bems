@@ -8,7 +8,8 @@ from sdk.api.message import Message
 from sdk.exceptions import CoolsmsException
 from uuid import uuid4
 import json
-import datetime
+from django.utils import timezone
+from datetime import timedelta
 import os
 
 # 엔지니어 페이지 렌더링
@@ -33,19 +34,20 @@ def engineer_login(request):
 
         try:
             # 가장 최근에 생성된 요청을 기준으로 인증
-            phonebook_entry = Manager.objects.get(id=entry_id)
-            support = SupportRequest.objects.filter(entry=phonebook_entry).order_by('-created_at').first()
+            manager_entry = Manager.objects.get(id=entry_id)
+            support = SupportRequest.objects.filter(entry=manager_entry).order_by('-created_at').first()
 
             if support is None:
                 return JsonResponse({'status': 'no matching request'}, status=404)
 
+            print(f"temp password: {support.temp_password}")
             if support.temp_password == password:
                 support.is_authenticated = True
                 support.save()
-                log_access(entry_id, "engineer", True)
+                log_access(entry_id, "engineer", "login", True)
                 return JsonResponse({'status': 'success'})
             else:
-                log_access(entry_id, "engineer", False)
+                log_access(entry_id, "engineer", "login", False)
                 return JsonResponse({'status': 'invalid password'}, status=401)
 
         except Exception as e:
@@ -68,8 +70,8 @@ def engineer_request_approval(request):
 
     try:
         # Phonebook에서 엔트리 찾기
-        phonebook_entry = Manager.objects.get(id=entry_id)
-        manager_phone_number = phonebook_entry.phone_number
+        manager_entry = Manager.objects.get(id=entry_id)
+        manager_phone_number = manager_entry.phone_number
 
         # 문자발송 전화번호 지정
         sender_phone_number = os.getenv('SENDER_PHONE_NUMBER')
@@ -84,15 +86,20 @@ def engineer_request_approval(request):
         # 랜덤 비밀번호 생성
         temp_password = str(uuid4())[:8]
         # SupportRequest에 저장
-        phonebook_entry = Manager.objects.get(id=entry_id)
+        manager_entry = Manager.objects.get(id=entry_id)
 
-        SupportRequest.objects.update_or_create(
-            entry=phonebook_entry,
+        support_request, created = SupportRequest.objects.update_or_create(
+            entry=manager_entry,
             defaults={
                 'temp_password': temp_password,
+                'status': 'pending',
                 'is_authenticated': False
             }
         )
+        # created_at도 강제로 갱신
+        support_request.created_at = timezone.now()
+        support_request.save()
+        log_access(entry_id, "engineer", "request", True)
 
         # 관리자에게 보낼 메시지
         manager_sms_text = (
@@ -118,6 +125,7 @@ def engineer_request_approval(request):
         if response.get('success_count', 0) > 0:
             return JsonResponse({"message": "Approval request sent successfully."})
         else:
+            log_access(entry_id, "engineer", "request", False)
             return JsonResponse({"error": "Failed to send approval request."}, status=500)
 
     except ObjectDoesNotExist:
@@ -130,10 +138,21 @@ def engineer_request_approval(request):
 
 def engineer_approved_view(request, entry_id):
     """
-    승인 완료 후 제어 페이지에 필요한 장비 상태 데이터 출력
+    엔지니어 승인 여부 확인 후 제어 페이지 렌더링
     """
+    # 1. 승인된 요청인지 확인
+    try:
+        support_request = SupportRequest.objects.get(entry_id=entry_id, status='approved', is_authenticated=True)
+    except SupportRequest.DoesNotExist:
+        return render(request, 'bems/not_authorized.html', status=403)
 
-    # DeviceStatus에서 controller_id가 entry_id인 데이터를 가져옴
+    # 1시간 초과 시 상태 되돌리기
+    if support_request.status == "approved" and support_request.created_at + timedelta(hours=1) < timezone.now():
+        support_request.status = "pending"
+        support_request.is_authenticated = False
+        support_request.save()
+
+    # 2. 장비 상태 데이터 조회
     device_status = get_object_or_404(DeviceStatus, controller_id=entry_id)
 
     context = {
@@ -145,19 +164,21 @@ def engineer_approved_view(request, entry_id):
             'remoteamp': device_status.remoteamp,
         }),
     }
+
     print("engineer_approved: ", context)
 
     return render(request, 'bems/engineer_approved.html', context)
 
 
-def log_access(entry_id, user_type, success):
-    """
-    엔지니어 로그인 성공/실패 기록을 로그 파일로 저장
-    """
-    log_dir = os.path.join(os.path.dirname(__file__), '..', 'Logs')
-    os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"{entry_id}_log.txt")
+def log_access(entry_id, user_type, message, success):
+    try:
+        print(f"engineer id: {entry_id}")
+        log_dir = os.path.join(os.path.dirname(__file__), '..', 'Logs')
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, "log.txt")
 
-    with open(log_file, 'a') as f:
-        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        f.write(f"[{now}] {user_type.upper()} LOGIN {'SUCCESS' if success else 'FAIL'}\n")
+        with open(log_file, 'a') as f:
+            now = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+            f.write(f"[{now}] {entry_id}번 {user_type.upper()} {message.upper()} {'SUCCESS' if success else 'FAIL'}\n")
+    except Exception as e:
+        print(f"로그 기록 중 오류 발생: {e}")
