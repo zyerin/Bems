@@ -2,11 +2,12 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from ..models import Manager, SupportRequest
+from ..models import Manager, SupportRequest, Engineer
 from sdk.api.message import Message
 from sdk.exceptions import CoolsmsException
 import os
-import datetime
+from django.utils import timezone
+from datetime import timedelta
 
 
 # 관리자가 승인할 수 있는 페이지 렌더링
@@ -37,10 +38,10 @@ def manager_login(request):
             if support.temp_password == password:
                 support.is_authenticated = True
                 support.save()
-                log_access(entry_id, "engineer", True)
+                log_access(entry_id, "manager", "login", True)
                 return JsonResponse({'status': 'success'})
             else:
-                log_access(entry_id, "engineer", False)
+                log_access(entry_id, "engineer", "login", False)
                 return JsonResponse({'status': 'invalid password'}, status=401)
 
         except Exception as e:
@@ -58,56 +59,106 @@ def manager_response(request):
     action = request.POST.get("action")  # 승인 또는 거부
     entry_id = request.POST.get("entry_id")
 
-    if action == "approve":
-        # 승인 처리 로직
-        # 승인이 되었다는 메시지와 함께 엔지니어 페이지 URL을 생성하여 전송
-        relative_url = reverse('engineer_approved', args=[entry_id])
-        nptechon_url = "http://www.nptechon.com"
-        yerin_url = "http://www.shimyerin.site"
-        engineer_url = f"{yerin_url}{relative_url}"
-        engineer_message = f"요청이 승인되었습니다: {engineer_url}"
+    try:
+        # Manager 인스턴스 조회
+        phonebook_entry = Manager.objects.get(id=entry_id)
 
-        api_key = os.getenv('COOL_SMS_API_KEY')
-        api_secret = os.getenv('COOL_SMS_API_SECRET')
+        # 최신 SupportRequest 조회
+        support_request = SupportRequest.objects.filter(entry=phonebook_entry).order_by('-created_at').first()
 
-        cool = Message(api_key, api_secret)
+        if not support_request:
+            return JsonResponse({"error": "지원 요청이 존재하지 않습니다."}, status=404)
 
-        # 엔지니어 전화번호 지정
-        engineer_phone_number = os.getenv('ENGINEER_PHONE_NUMBER')  # 고정
+        if action == "approve":
+            # 상태 업데이트
+            support_request.status = "approved"
+            support_request.is_authenticated = True
+            support_request.save()
+            log_access(entry_id, "manager", "approve", True)
 
-        # 문자발송 전화번호 지정
-        sender_phone_number = os.getenv('SENDER_PHONE_NUMBER')
-        params = {
-            'type': 'sms',
-            'to': engineer_phone_number,
-            'from': sender_phone_number,
-            'text': engineer_message,
-        }
+            # 승인 메시지 전송
+            relative_url = reverse('engineer_approved', args=[entry_id])
+            yerin_url = "http://www.shimyerin.site"
+            engineer_url = f"{yerin_url}{relative_url}"
+            engineer_message = f"요청이 승인되었습니다: {engineer_url}"
 
-        response = cool.send(params)
+            api_key = os.getenv('COOL_SMS_API_KEY')
+            api_secret = os.getenv('COOL_SMS_API_SECRET')
+            cool = Message(api_key, api_secret)
 
-        if response.get('success_count', 0) > 0:
-            return JsonResponse({"message": "Request approved."})
+            # 엔지니어 전화번호: 첫 번째 등록된 엔지니어 사용
+            engineer = Engineer.objects.first()
+            if not engineer:
+                return JsonResponse({"error": "등록된 엔지니어가 없습니다."}, status=404)
+            engineer_phone_number = engineer.phone_number
+            sender_phone_number = os.getenv('SENDER_PHONE_NUMBER')
+
+            params = {
+                'type': 'sms',
+                'to': engineer_phone_number,
+                'from': sender_phone_number,
+                'text': engineer_message,
+            }
+
+            response = cool.send(params)
+
+            if response.get('success_count', 0) > 0:
+                return JsonResponse({"message": "Request approved."})
+            else:
+                log_access(entry_id, "manager", "approve", False)
+                return JsonResponse({"error": "문자 전송 실패"}, status=500)
+
+        elif action == "deny":
+            support_request.status = "denied"
+            support_request.is_authenticated = False
+            support_request.save()
+            log_access(entry_id, "manager", "deny", True)
+
+            # 승인 메시지 전송
+            engineer_message = "해당 요청이 관리자에 의해 거부되었습니다."
+            api_key = os.getenv('COOL_SMS_API_KEY')
+            api_secret = os.getenv('COOL_SMS_API_SECRET')
+            cool = Message(api_key, api_secret)
+
+            # 엔지니어 전화번호: 첫 번째 등록된 엔지니어 사용
+            engineer = Engineer.objects.first()
+            if not engineer:
+                return JsonResponse({"error": "등록된 엔지니어가 없습니다."}, status=404)
+            engineer_phone_number = engineer.phone_number
+            sender_phone_number = os.getenv('SENDER_PHONE_NUMBER')
+            params = {
+                'type': 'sms',
+                'to': engineer_phone_number,
+                'from': sender_phone_number,
+                'text': engineer_message,
+            }
+
+            response = cool.send(params)
+
+            if response.get('success_count', 0) > 0:
+                return JsonResponse({"message": "Request approved."})
+            else:
+                log_access(entry_id, "manager", "deny", False)
+                return JsonResponse({"error": "문자 전송 실패"}, status=500)
+
         else:
-            return JsonResponse({"error": "Failed to send approval notification to engineer."}, status=500)
+            return JsonResponse({"error": "Unknown action."}, status=400)
 
-    elif action == "deny":
-        # 거부 처리 로직
-        return JsonResponse({"message": "Request denied."})
-
-    else:
-        return JsonResponse({"error": "Unknown action."}, status=400)
+    except Manager.DoesNotExist:
+        return JsonResponse({"error": "존재하지 않는 관리자 ID입니다."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": f"처리 중 오류 발생: {str(e)}"}, status=500)
 
 
-def log_access(entry_id, user_type, success):
-    """
-    관리자 로그인 성공/실패 로그 저장
-    """
-    import os
-    log_dir = os.path.join(os.path.dirname(__file__), '..', 'Logs')
-    os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"{entry_id}_log.txt")
+def log_access(entry_id, user_type, message, success):
+    try:
+        print(f"manager id: {entry_id}")
+        log_dir = os.path.join(os.path.dirname(__file__), '..', 'Logs')
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, "log.txt")
 
-    with open(log_file, 'a') as f:
-        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        f.write(f"[{now}] {user_type.upper()} LOGIN {'SUCCESS' if success else 'FAIL'}\n")
+        with open(log_file, 'a') as f:
+            now = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+            f.write(f"[{now}] 학교{entry_id} {user_type.upper()} {message.upper()} {'SUCCESS' if success else 'FAIL'}\n")
+    except Exception as e:
+        print(f"로그 기록 중 오류 발생: {e}")
