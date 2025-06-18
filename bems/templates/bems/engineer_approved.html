@@ -67,19 +67,20 @@
             </p>
         </div>
         <div class="deviceStatus">
-            <p>익스체인저
-                <span id="exchangerStatus" class="status">정상</span>
-                <button onclick="sendCommand('{2:reset:exchanger}', 'exchanger')">재부팅</button>
-                <span id="exchangerMessage" class="statusMessage"></span>
-            </p>
-        </div>
-        <div class="deviceStatus">
             <p>스피커셀렉터
                 <span id="speakerSelectorStatus" class="status">정상</span>
-                <button onclick="sendCommand('{3:reset:speakerselector}', 'speakerselector')">재부팅</button>
+                <button onclick="sendCommand('{2:reset:speakerselector}', 'speakerselector')">재부팅</button>
                 <span id="speakerselectorMessage" class="statusMessage"></span>
             </p>
         </div>
+        <div class="deviceStatus">
+            <p>익스체인저
+                <span id="exchangerStatus" class="status">정상</span>
+                <button onclick="sendCommand('{3:reset:exchanger}', 'exchanger')">재부팅</button>
+                <span id="exchangerMessage" class="statusMessage"></span>
+            </p>
+        </div>
+
         <div class="deviceStatus">
             <p>리모트엠프
                 <span id="remoteAmpStatus" class="status">정상</span>
