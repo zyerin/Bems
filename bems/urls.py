@@ -4,7 +4,8 @@ from bems.views import (
     main_view, phonebook_view, send_sms_view,
     engineer_view, engineer_login, engineer_request_approval, engineer_approved_view,
     manager_view, manager_login, manager_response,
-    control, control_device
+    control, control_device,
+    view_logs
 )
 
 urlpatterns = [
@@ -16,8 +17,8 @@ urlpatterns = [
     path('manager/<int:entry_id>/', manager_view, name='manager'),
     path('manager_response_handler/', manager_response, name='manager_response'),
     path('engineer/approved/<int:entry_id>/', engineer_approved_view, name='engineer_approved'),
-    path('control/', control, name='control'),
-    path('control/control/', control_device, name='control_device'),
+    path('control/<int:entry_id>', control_device, name='control_device'),
     path('login/engineer/', engineer_login, name='engineer_login'),
     path('login/manager/', manager_login, name='manager_login'),
+    path('logs/', view_logs, name='view_logs'),
 ]
