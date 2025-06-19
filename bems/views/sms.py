@@ -6,7 +6,7 @@ from sdk.exceptions import CoolsmsException
 from uuid import uuid4
 import os
 from ..models import Manager, SupportRequest
-
+from django.utils import timezone
 
 def send_sms_view(request):
     if request.method != 'POST':
@@ -34,13 +34,18 @@ def send_sms_view(request):
         # SupportRequest에 저장
         phonebook_entry = Manager.objects.get(id=entry_id)
 
-        SupportRequest.objects.update_or_create(
+        support_request, created = SupportRequest.objects.update_or_create(
             entry=phonebook_entry,
             defaults={
                 'temp_password': temp_password,
+                'status': 'pending',
                 'is_authenticated': False
             }
         )
+
+        # created_at도 강제로 갱신
+        support_request.created_at = timezone.now()
+        support_request.save()
 
         # 엔지니어 전화번호 지정
         engineer_phone_number = os.getenv('ENGINEER_PHONE_NUMBER') # 고정
